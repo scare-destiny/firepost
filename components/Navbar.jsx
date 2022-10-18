@@ -1,8 +1,14 @@
 
 import Link from "next/dist/client/link";
+import { useContext } from 'react';
+import { UserContext } from '../lib/context';
+import {useRouter} from 'next/router'
+import { auth } from '../lib/firebase';
+
 export default function Navbar() {
-	const user = null
-	const username = null
+	const { user, username } = useContext(UserContext)
+	
+
 	return (
 		<nav className="navbar">
 			<ul>
@@ -22,7 +28,7 @@ export default function Navbar() {
 						</li>
 						<li>
 							<Link href={`/${username}`}>
-								<img src={usre?.photoURL}/>
+								<img src={user?.photoURL}/>
 </Link>
 						</li>
 					</>

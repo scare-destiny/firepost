@@ -1,18 +1,73 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import styles from '../../styles/Post.module.css'
+import PostContent from '../../components/PostContent'
+import { firestore, getUserWithUsername, postToJSON } from '../../lib/firebase'
+import { useDocumentData } from 'react-firebase-hooks/firestore'
+import HeartButton from '../../components/HeartButton'
+import AuthCheck from '../../components/AuthCheck'
 import Link from 'next/link'
 
-export default function Page({}) {
+export async function getStaticProps({ params }) {
+	const { username, slug } = params
+	const userDoc = await getUserWithUsername(username)
+
+	let post
+	let path
+
+	if (userDoc) {
+		const postRef = userDoc.ref.collection('posts').doc(slug)
+		post = postToJSON(await postRef.get())
+
+		path = postRef.path
+	}
+
+	return {
+		props: { post, path },
+		revalidate: 100,
+	}
+}
+
+export async function getStaticPaths() {
+	const snapshot = await firestore.collectionGroup('posts').get()
+
+	const paths = snapshot.docs.map((doc) => {
+		const { slug, username } = doc.data()
+
+		return {
+			params: { username: username?.toString() || '', slug },
+		}
+	})
+
+	return {
+		paths,
+		fallback: 'blocking',
+	}
+}
+export default function Post(props) {
+	const postRef = firestore.doc(props.path)
+	const [realtimePost] = useDocumentData(postRef)
+
+	const post = realtimePost || props.post
+
 	return (
-		<div>
-			<Link
-				href={{
-					pathname: '/username',
-					query: { username: 'zhenka1122' },
-				}}
-			>
-				<a>Zhenka's profile</a>
-			</Link>
-		</div>
+		<main className={styles.container}>
+			<section>
+				<PostContent post={post} />
+			</section>
+
+			<aside className='card'>
+				<p>
+					<strong>{post.heartCount || 0} 🤍</strong>
+				</p>
+				<AuthCheck
+					fallback={
+						<Link href='/enter'>
+							<button>💗 Sign Up</button>
+						</Link>
+					}
+				>
+					<HeartButton postRef={postRef} />
+				</AuthCheck>
+			</aside>
+		</main>
 	)
 }
