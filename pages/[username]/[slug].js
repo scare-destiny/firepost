@@ -33,7 +33,10 @@ export async function getStaticPaths() {
 		const { slug, username } = doc.data()
 
 		return {
-			params: { username: username?.toString() || '', slug },
+			params: {
+				username: username?.toString() || '',
+				slug: slug?.toString() || '',
+			},
 		}
 	})
 
